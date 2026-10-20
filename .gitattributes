@@ -1,0 +1,4 @@
+# Keep the Windows installer CRLF wherever it is checked out.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.sh  text eol=lf

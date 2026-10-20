@@ -99,6 +99,43 @@ node install.cjs --project --uninstall  # project install, from the project root
 This removes the hook entries from settings.json. The copied hook files under
 `~/.claude/safeguards/` are left in place; delete that directory to remove them.
 
+### Unattended install (SSH, WinRM, RMM/MDM)
+
+For rolling the hooks out to a machine you are not sitting at, use the
+bootstrap wrappers instead of the steps above. They clone the repo (or use the
+clone they sit in), check for Node 18+, run `install.cjs`, and clean up after
+themselves. They never prompt — a missing git credential fails the job rather
+than hanging it — and they report a distinct exit code:
+`2` bad usage, `3` missing prerequisite, `4` download failed, `5` installer
+failed.
+
+```bash
+./install.sh --dry-run          # print what would change, write nothing
+./install.sh                    # user install -> ~/.claude
+./install.sh --ref v1.2.0       # pin to a branch or tag
+./install.sh --project /srv/app # project install -> /srv/app/.claude
+./install.sh --uninstall
+```
+
+```bat
+install.bat --dry-run
+install.bat
+install.bat --ref v1.2.0
+install.bat --project C:\src\app
+install.bat --uninstall
+```
+
+Both take `--repo <url>` for a mirror and `--keep` to leave the temporary clone
+behind for inspection.
+
+**Run it as the developer who uses Claude Code.** A user install writes to that
+account's own `~/.claude` (`%USERPROFILE%\.claude`), so an RMM agent running as
+root or SYSTEM installs into a profile Claude Code will never read.
+
+**Download the script, then run it** — don't pipe it from the network into a
+shell. Rule 4 forbids that, and the guard blocks the pattern, so a `curl ... |
+bash` rollout would be denied on any machine that already has the hooks.
+
 ## What you'll notice
 
 Day to day, with the hooks installed:
