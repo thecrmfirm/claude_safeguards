@@ -16,20 +16,26 @@ macOS, Linux, and Windows.
 
 ## Install
 
-There are two ways in. Pick the one that matches you:
+There are three ways in. Pick the one that matches you:
 
+- **Ask Claude** — paste one prompt into Claude Code and let it do the work.
+  It also tells you whether you already have the safeguards.
 - **Script install** — you're comfortable in a terminal. Three commands.
 - **Manual install** — no terminal at all. Download, extract, drag a folder,
   paste a block of text into a settings file.
 
-Both end up in the same place. Neither needs git. Both need **Node**.
+All three end up in the same place. None of them needs git. All of them need
+**Node**.
 
 ```mermaid
 flowchart TD
     START([Install the safeguards]) --> NODE{"Is Node installed?<br/>Run: node --version"}
-    NODE -- "v18 or higher" --> CHOICE{"Script or manual?"}
+    NODE -- "v18 or higher" --> CHOICE{"How do you<br/>want to install?"}
     NODE -- "Not installed" --> STEP0["Step 0<br/>Install Node from nodejs.org"]
     STEP0 --> CHOICE
+
+    CHOICE -- "Ask Claude" --> C1["Step C1<br/>Paste the prompt<br/>into Claude Code"]
+    C1 --> RESTART
 
     CHOICE -- "Script<br/>(you have a terminal)" --> S1["Step S1<br/>Download the ZIP and unzip it"]
     S1 --> S2["Step S2<br/>Run: node install.cjs"]
@@ -60,31 +66,31 @@ Each step below has instructions for macOS, Windows and Linux.
                     |                             |
                     +--------------+--------------+
                                    |
-                           Script or manual?
-                     /                            \
-          Script (terminal)                  Manual (no terminal)
-                 |                                  |
-     S1: download ZIP, unzip            M1: download ZIP
-                 |                                  |
-     S2: node install.cjs               M2: extract it
-                 |                                  |
-                 |                      M3: copy the hooks folder into
-                 |                          your .claude/safeguards folder
-                 |                                  |
-                 |                      M4: add the hooks block
-                 |                          to settings.json
-                 |                                  |
-                 +----------------+-----------------+
-                                  |
-                   LAST STEP: restart Claude Code
-                                  |
-              VERIFY: ask Claude to read a .env file
-                     - it should refuse
+                      How do you want to install?
+             /                     |                      \
+     Ask Claude          Script (terminal)        Manual (no terminal)
+          |                        |                       |
+  C1: paste the prompt   S1: download ZIP, unzip   M1: download ZIP
+      into Claude Code             |                       |
+          |              S2: node install.cjs     M2: extract it
+          |                        |                       |
+          |                        |              M3: copy the hooks folder
+          |                        |                  into .claude/safeguards
+          |                        |                       |
+          |                        |              M4: add the hooks block
+          |                        |                  to settings.json
+          |                        |                       |
+          +------------------------+-----------------------+
+                                   |
+                    LAST STEP: restart Claude Code
+                                   |
+               VERIFY: ask Claude to read a .env file
+                      - it should refuse
 ```
 
 </details>
 
-### Step 0: Node (both paths)
+### Step 0: Node (every path)
 
 The hooks run on Node 18 or newer. If you installed Claude Code with `npm`,
 you already have it.
@@ -113,6 +119,61 @@ The macOS and Windows installers ask for an administrator password; ask IT if
 you don't have one. Nothing else here needs admin rights.
 
 Run `node --version` again to confirm before you carry on.
+
+---
+
+## Ask Claude to install it
+
+One prompt, no terminal work of your own. It reports what you already have, and
+installs only what's missing.
+
+### Step C1: Paste this prompt into Claude Code
+
+```text
+Check whether the CRMF Claude Code safeguards are installed on this machine,
+and install them from the repo if they aren't.
+
+CHECK
+1. Run `node --version`. If Node is missing or older than v18, stop and tell me
+   - do not try to install Node yourself.
+2. Look in ~/.claude/settings.json (Windows: %USERPROFILE%\.claude\settings.json)
+   for hook entries whose command contains "guard.cjs", under each of
+   PreToolUse, UserPromptSubmit and PostToolUse.
+3. Check that the file those entries point at actually exists (normally
+   ~/.claude/safeguards/hooks/guard.cjs), and that hooks/lib/ sits next to it.
+4. Report which of the three events are wired and whether the files are there.
+   Do not print the contents of settings.json.
+
+IF ALL THREE ARE WIRED AND THE FILES EXIST
+Stop. Tell me I'm covered, and give me the modified date of guard.cjs so I know
+how old my copy is.
+
+IF ANYTHING IS MISSING
+1. Download https://github.com/thecrmfirm/claude_safeguards/archive/refs/heads/main.zip
+   into a temp folder and extract it (use the extraction tool that fits this OS;
+   `git clone https://github.com/thecrmfirm/claude_safeguards.git` is fine if git
+   is installed). Never pipe a download into a shell.
+2. From the extracted folder, run `node install.cjs --dry-run`, show me the
+   result, then run `node install.cjs`.
+3. Confirm afterwards that ~/.claude/safeguards/hooks/guard.cjs exists and all
+   three hook entries are in settings.json.
+4. Tell me to restart Claude Code - or type /hooks and press Esc - since hooks
+   are only loaded at startup.
+```
+
+What to expect:
+
+- **Approve the permission prompts.** Claude asks before downloading and before
+  running the installer, which writes `~/.claude/settings.json` and copies files
+  into `~/.claude/safeguards/`.
+- **Restart afterwards even though Claude just installed them.** The hooks load
+  at startup, so they are not active in the session that installed them.
+- **It checks registration, not freshness.** If all three hook entries are
+  already there, it stops and reports the date of your copy. To pull a newer
+  version, follow [Updating](#updating).
+
+To keep it at hand, save the prompt as `~/.claude/commands/check-safeguards.md`
+and run it in any session by typing `/check-safeguards`.
 
 ---
 
@@ -173,7 +234,7 @@ Now skip to [Last step: restart Claude Code](#last-step-restart-claude-code).
 
 No terminal, no git, no commands — you download a file, drag a folder, and
 paste some text. Node still has to be installed
-([Step 0](#step-0-node-both-paths)).
+([Step 0](#step-0-node-every-path)).
 
 ### Step M1: Download the ZIP
 
