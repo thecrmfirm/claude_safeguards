@@ -1,0 +1,37 @@
+{
+  "//": "Sample Claude Code hook wiring for the safeguards. Merge the \"hooks\" block into your settings.json. For a PROJECT install keep $CLAUDE_PROJECT_DIR; for a USER/TEAM install (~/.claude/settings.json) run install.cjs, which rewrites these paths to an absolute location.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|BashOutput|Read|Edit|Write|MultiEdit|NotebookEdit|NotebookRead|WebFetch|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/guard.cjs\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/guard.cjs\""
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Read|Grep|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/hooks/guard.cjs\""
+          }
+        ]
+      }
+    ]
+  }
+}

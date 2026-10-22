@@ -11,85 +11,338 @@ They guard against accidents (a rushed request, a forgotten rule), not
 against someone determined to get around them. They act only on what Claude
 does: commands you type in your own terminal are never affected.
 
-Everything is **pure Node** — no dependencies, no build step. It runs
-identically on macOS, Linux, and Windows, and any machine with Claude Code
-already has Node.
+Everything is **pure Node** — no dependencies, no build step, the same files on
+macOS, Linux, and Windows.
 
 ## Install
 
-**Requirements:** Node 18+ (`node --version`), git, and Claude Code.
+There are two ways in. Pick the one that matches you:
 
-### 1. Download
+- **Script install** — you're comfortable in a terminal. Three commands.
+- **Manual install** — no terminal at all. Download, extract, drag a folder,
+  paste a block of text into a settings file.
 
-```bash
-git clone https://github.com/thecrmfirm/claude_safeguards.git
-cd claude_safeguards
+Both end up in the same place. Neither needs git. Both need **Node**.
+
+```mermaid
+flowchart TD
+    START([Install the safeguards]) --> NODE{"Is Node installed?<br/>Run: node --version"}
+    NODE -- "v18 or higher" --> CHOICE{"Script or manual?"}
+    NODE -- "Not installed" --> STEP0["Step 0<br/>Install Node from nodejs.org"]
+    STEP0 --> CHOICE
+
+    CHOICE -- "Script<br/>(you have a terminal)" --> S1["Step S1<br/>Download the ZIP and unzip it"]
+    S1 --> S2["Step S2<br/>Run: node install.cjs"]
+    S2 --> RESTART
+
+    CHOICE -- "Manual<br/>(no terminal)" --> M1["Step M1<br/>Download the ZIP"]
+    M1 --> M2["Step M2<br/>Extract it"]
+    M2 --> M3["Step M3<br/>Copy the hooks folder into<br/>your .claude/safeguards folder"]
+    M3 --> M4["Step M4<br/>Add the hooks block<br/>to settings.json"]
+    M4 --> RESTART
+
+    RESTART["Last step<br/>Restart Claude Code"] --> VERIFY([Verify: ask Claude to read<br/>a .env file - it should refuse])
 ```
 
-No `npm install` — there are no dependencies.
+Each step below has instructions for macOS, Windows and Linux.
 
-### 2. Install for every project on your machine (recommended)
+<details>
+<summary>Same chart, as plain text (if the diagram above doesn't render)</summary>
 
-Run from the cloned directory. This copies the hooks to
-`~/.claude/safeguards/hooks/` and wires them into `~/.claude/settings.json`,
-first backing up your existing settings to a timestamped
-`settings.json.bak-YYYYMMDD-HHMMSS`. Your other settings and hooks are kept. If
-`settings.json` isn't valid JSON, the installer stops and changes nothing:
+```text
+                    Install the safeguards
+                              |
+                 Is Node installed?  (node --version)
+                     /                        \
+              v18 or higher                not installed
+                    |                             |
+                    |              STEP 0: install Node from nodejs.org
+                    |                             |
+                    +--------------+--------------+
+                                   |
+                           Script or manual?
+                     /                            \
+          Script (terminal)                  Manual (no terminal)
+                 |                                  |
+     S1: download ZIP, unzip            M1: download ZIP
+                 |                                  |
+     S2: node install.cjs               M2: extract it
+                 |                                  |
+                 |                      M3: copy the hooks folder into
+                 |                          your .claude/safeguards folder
+                 |                                  |
+                 |                      M4: add the hooks block
+                 |                          to settings.json
+                 |                                  |
+                 +----------------+-----------------+
+                                  |
+                   LAST STEP: restart Claude Code
+                                  |
+              VERIFY: ask Claude to read a .env file
+                     - it should refuse
+```
+
+</details>
+
+### Step 0: Node (both paths)
+
+The hooks run on Node 18 or newer. If you installed Claude Code with `npm`,
+you already have it.
+
+**Check:** open a terminal — Terminal.app on macOS, PowerShell on Windows —
+and run:
+
+```bash
+node --version
+```
+
+A version like `v20.11.1` means you're set — skip the rest of this step.
+`command not found` (or `not recognized`) means Node isn't installed, or isn't on
+your PATH.
+
+**Install it:** download it from
+**<https://nodejs.org/en/download/current>** and pick the build for your OS:
+
+| OS | File to download | Then |
+|----|------------------|------|
+| **macOS** | the `.pkg` installer — **ARM64** for Apple Silicon (M1/M2/M3/M4), **x64** for an Intel Mac | Double-click it, click through, then **close and reopen your terminal** |
+| **Windows** | the `.msi` installer (`x64`) | Double-click it, click through — leave "Add to PATH" checked — then **close and reopen PowerShell** |
+| **Linux** | your distro's package (`sudo apt install nodejs`, `sudo dnf install nodejs`), or the `.tar.xz` from the same page | Reopen your terminal |
+
+The macOS and Windows installers ask for an administrator password; ask IT if
+you don't have one. Nothing else here needs admin rights.
+
+Run `node --version` again to confirm before you carry on.
+
+---
+
+## Script install
+
+For anyone comfortable with a terminal. No git required — you download a ZIP.
+
+### Step S1: Download and unzip
+
+Go to **<https://github.com/thecrmfirm/claude_safeguards>**, click the green
+**Code** button, choose **Download ZIP**, and unzip it. Or do it from the
+terminal:
+
+**macOS / Linux**
+
+```bash
+cd ~/Downloads
+curl -L -o claude_safeguards.zip https://github.com/thecrmfirm/claude_safeguards/archive/refs/heads/main.zip
+unzip claude_safeguards.zip
+cd claude_safeguards-main
+```
+
+**Windows (PowerShell)**
+
+```powershell
+cd $HOME\Downloads
+Invoke-WebRequest -Uri https://github.com/thecrmfirm/claude_safeguards/archive/refs/heads/main.zip -OutFile claude_safeguards.zip
+Expand-Archive claude_safeguards.zip -DestinationPath .
+cd claude_safeguards-main
+```
+
+With git installed, `git clone https://github.com/thecrmfirm/claude_safeguards.git`
+works just as well and makes updating one command.
+
+There is no `npm install` — there are no dependencies.
+
+### Step S2: Run the installer
+
+Run this **from the unzipped folder** (the one holding `install.cjs`). It
+copies the hooks to `~/.claude/safeguards/hooks/` and wires them into
+`~/.claude/settings.json`, first backing up your existing settings to a
+timestamped `settings.json.bak-YYYYMMDD-HHMMSS`. Your other settings and hooks
+are kept. If `settings.json` isn't valid JSON, the installer stops and changes
+nothing:
 
 ```bash
 node install.cjs --dry-run   # optional: print the resulting settings, write nothing
 node install.cjs
 ```
 
-### 3. Restart Claude Code
+The same two commands work in PowerShell on Windows.
 
-Settings are read at startup. Either restart Claude Code, or, in a session
-that's already open, type `/hooks` and press Enter. A menu listing your hooks
-pops up. **You don't need to do anything in it**: opening it is what reloads
-the settings. Press **Esc** to close it and carry on.
+Now skip to [Last step: restart Claude Code](#last-step-restart-claude-code).
 
-### 4. Verify
+---
 
-```bash
-node test/run-tests.cjs   # expect: All tests passed.
-```
+## Manual install
 
-Then, in Claude Code, try two things:
+No terminal, no git, no commands — you download a file, drag a folder, and
+paste some text. Node still has to be installed
+([Step 0](#step-0-node-both-paths)).
+
+### Step M1: Download the ZIP
+
+1. Open **<https://github.com/thecrmfirm/claude_safeguards>** in your browser.
+2. Click the green **Code** button near the top right.
+3. Choose **Download ZIP**.
+4. It lands in your **Downloads** folder as `claude_safeguards-main.zip`.
+
+### Step M2: Extract it
+
+- **macOS:** double-click the ZIP in Finder. You get a folder called
+  `claude_safeguards-main`.
+- **Windows:** right-click the ZIP in File Explorer → **Extract All…** →
+  **Extract**. You get a folder called `claude_safeguards-main`.
+
+Open that folder. Inside it is a folder named **`hooks`** — that's the one
+you're going to copy. (If you see another `claude_safeguards-main` inside, open
+it; `hooks` is one level down.)
+
+### Step M3: Find your `.claude` folder and copy `hooks` into it
+
+Your `.claude` folder is in your **home folder** and is hidden by default.
+Open it through the address box rather than by browsing:
+
+**macOS**
+
+1. Click the desktop (so Finder is in front).
+2. In the menu bar: **Go → Go to Folder…** (or press **⇧ ⌘ G**).
+3. Type `~/.claude/safeguards/` and press **Return**.
+   - If Finder says the folder doesn't exist, type `~/.claude` instead, press
+     Return, and create a new folder inside it named **`safeguards`** (**File →
+     New Folder**, or **⇧ ⌘ N**). If `~/.claude` itself doesn't exist, launch
+     Claude Code once — it creates it — then try again.
+4. Drag the **`hooks`** folder from the unzipped download into
+   `safeguards`, so you end up with
+   **`~/.claude/safeguards/hooks/guard.cjs`**.
+
+**Windows**
+
+1. Open **File Explorer**.
+2. Click the **address bar** at the top (or press **Alt + D**) and type
+   `%USERPROFILE%\.claude\safeguards` then press **Enter**.
+   - If Explorer says it can't find it, type `%USERPROFILE%\.claude` instead,
+     press Enter, and create a new folder named **`safeguards`** (right-click
+     → **New → Folder**). If `.claude` itself doesn't exist, launch Claude Code
+     once — it creates it — then try again.
+3. Copy the **`hooks`** folder from the extracted download and paste it into
+   `safeguards`, so you end up with
+   **`C:\Users\<you>\.claude\safeguards\hooks\guard.cjs`**.
+
+**Linux**
+
+In Files/Nautilus press **Ctrl + L** and type `~/.claude/safeguards`, then copy
+`hooks` in. Show hidden files with **Ctrl + H** if you prefer to browse.
+
+> **Write down the full path.** You need it in the next step. On macOS,
+> right-click the `hooks` folder → hold **Option** → **Copy "hooks" as
+> Pathname**. On Windows, click the Explorer address bar while inside `hooks`
+> and copy the text (e.g. `C:\Users\jsmith\.claude\safeguards\hooks`).
+
+### Step M4: Tell Claude Code to use the hooks
+
+Claude Code reads its settings from a file called **`settings.json`** in the
+same `.claude` folder: `~/.claude/settings.json` (macOS/Linux) or
+`%USERPROFILE%\.claude\settings.json` (Windows).
+
+1. **Back it up first if it already exists.** Copy and paste the file in place
+   — you'll get `settings copy.json` / `settings - Copy.json`. If it's not
+   there, you'll create it in a moment.
+2. Open `settings.json` in a plain-text editor — **TextEdit** on macOS
+   (**Format → Make Plain Text** if it opens as rich text), **Notepad** on
+   Windows, or VS Code if you have it. Not Word.
+3. If the file is **empty or missing**, paste this in whole. If it already has
+   content, paste only the `"hooks": { … }` part as a new top-level key, and
+   make sure every entry is separated by a comma:
+
+   ```json
+   {
+     "hooks": {
+       "PreToolUse": [
+         {
+           "matcher": "Bash|BashOutput|Read|Edit|Write|MultiEdit|NotebookEdit|NotebookRead|WebFetch|Grep",
+           "hooks": [
+             { "type": "command", "command": "node \"/Users/YOURNAME/.claude/safeguards/hooks/guard.cjs\"" }
+           ]
+         }
+       ],
+       "UserPromptSubmit": [
+         {
+           "hooks": [
+             { "type": "command", "command": "node \"/Users/YOURNAME/.claude/safeguards/hooks/guard.cjs\"" }
+           ]
+         }
+       ],
+       "PostToolUse": [
+         {
+           "matcher": "Bash|Read|Grep|WebFetch",
+           "hooks": [
+             { "type": "command", "command": "node \"/Users/YOURNAME/.claude/safeguards/hooks/guard.cjs\"" }
+           ]
+         }
+       ]
+     }
+   }
+   ```
+
+4. **Replace all three paths** with the path you copied in Step M3, ending in
+   `/guard.cjs`:
+   - **macOS:** `/Users/YOURNAME/.claude/safeguards/hooks/guard.cjs` — swap
+     `YOURNAME` for your short user name (it's in the pathname you copied).
+   - **Linux:** `/home/YOURNAME/.claude/safeguards/hooks/guard.cjs`.
+   - **Windows:** use **forward slashes** —
+     `C:/Users/YOURNAME/.claude/safeguards/hooks/guard.cjs`. A single backslash
+     breaks the file; if you use backslashes, double every one
+     (`C:\\Users\\…`).
+5. Save the file. Keep the name exactly `settings.json` — Notepad likes to add
+   `.txt`; choose **Save as type → All Files** if it does.
+
+[settings.sample.json](settings.sample.json) in the download has the same
+block, but written for a *project* install — if you copy from it, you still
+have to replace `$CLAUDE_PROJECT_DIR/hooks` with your full path.
+
+---
+
+## Last step: restart Claude Code
+
+Settings are read at startup. Either quit and reopen Claude Code, or, in a
+session that's already open, type `/hooks` and press Enter. A menu listing your
+hooks pops up. **You don't need to do anything in it**: opening it is what
+reloads the settings. Press **Esc** to close it and carry on.
+
+## Verify
+
+In Claude Code, try two things:
 
 - Ask it to read a `.env` file: the tool call should be denied with a reason.
 - Ask it to deploy something to one of your sandboxes (without `--dry-run`):
   it should refuse and give you the command to run yourself.
 
-After this, the clone is only needed for updates; the installed copy under
+If you have a terminal, the full test suite is a stronger check — run it from
+the downloaded folder:
+
+```bash
+node test/run-tests.cjs   # expect: All tests passed.
+```
+
+**Nothing happens?** The usual causes, in order: Claude Code wasn't restarted;
+the path in `settings.json` has a typo or points at a folder that isn't there;
+`settings.json` isn't valid JSON (paste it into <https://jsonlint.com> to
+check); or `node` isn't on the PATH.
+
+After this, the download is only needed for updates; the copy under
 `~/.claude/safeguards/hooks/` is what runs.
 
-### Installing for a single project instead
+## Updating
 
-The project install references hooks at `$CLAUDE_PROJECT_DIR/hooks/`, so copy
-`hooks/` to the project root yourself, then run the installer **from that
-project root** — it writes to `./.claude/settings.json` and copies nothing:
+**Script:** download the latest ZIP (or `git pull`) and re-run `node
+install.cjs` from it. The installer is idempotent — it strips its own previous
+entries before adding fresh ones, so entries never stack up.
 
-```bash
-cp -R /path/to/claude_safeguards/hooks ./hooks
-node /path/to/claude_safeguards/install.cjs --project
-```
+**Manual:** download the ZIP again (Step M1–M2), and replace the `hooks` folder
+inside `~/.claude/safeguards/` with the new one — delete the old one first, then
+copy the new one in. `settings.json` doesn't change.
 
-Or paste the `hooks` block from [settings.sample.json](settings.sample.json)
-into your settings by hand.
+Restart Claude Code afterwards either way.
 
-### Updating
+## Uninstalling
 
-Pull and re-run the installer. It is idempotent — it strips its own previous
-entries before adding fresh ones, so entries never stack up:
-
-```bash
-git pull && node install.cjs
-```
-
-Then restart Claude Code, or type `/hooks` and press **Esc** to close the menu
-(see step 3).
-
-### Uninstalling
+**Script:**
 
 ```bash
 node install.cjs --uninstall            # user install
@@ -99,42 +352,42 @@ node install.cjs --project --uninstall  # project install, from the project root
 This removes the hook entries from settings.json. The copied hook files under
 `~/.claude/safeguards/` are left in place; delete that directory to remove them.
 
-### Unattended install (SSH, WinRM, RMM/MDM)
+**Manual:** open `settings.json` and delete the three hook entries you pasted
+in (or restore the backup copy you made), then delete the
+`~/.claude/safeguards` folder.
 
-For rolling the hooks out to a machine you are not sitting at, use the
-bootstrap wrappers instead of the steps above. They clone the repo (or use the
-clone they sit in), check for Node 18+, run `install.cjs`, and clean up after
-themselves. They never prompt — a missing git credential fails the job rather
-than hanging it — and they report a distinct exit code:
-`2` bad usage, `3` missing prerequisite, `4` download failed, `5` installer
-failed.
+## Installing for a single project instead
+
+Everything above installs for every project on your machine. For one project
+only, the hooks live at the project root and the settings go in the project's
+own `.claude/settings.json`:
 
 ```bash
-./install.sh --dry-run          # print what would change, write nothing
-./install.sh                    # user install -> ~/.claude
-./install.sh --ref v1.2.0       # pin to a branch or tag
-./install.sh --project /srv/app # project install -> /srv/app/.claude
-./install.sh --uninstall
+cp -R /path/to/claude_safeguards/hooks ./hooks   # Windows: copy the folder in Explorer
+node /path/to/claude_safeguards/install.cjs --project
 ```
 
-```bat
-install.bat --dry-run
-install.bat
-install.bat --ref v1.2.0
-install.bat --project C:\src\app
-install.bat --uninstall
-```
+Run the installer **from that project root** — it writes to
+`./.claude/settings.json` and copies nothing. By hand: copy `hooks/` to the
+project root, then paste the `hooks` block from
+[settings.sample.json](settings.sample.json) into `.claude/settings.json`
+as-is, keeping the `$CLAUDE_PROJECT_DIR` paths.
 
-Both take `--repo <url>` for a mirror and `--keep` to leave the temporary clone
-behind for inspection.
+## Rolling it out to a machine you're not sitting at
 
-**Run it as the developer who uses Claude Code.** A user install writes to that
-account's own `~/.claude` (`%USERPROFILE%\.claude`), so an RMM agent running as
-root or SYSTEM installs into a profile Claude Code will never read.
+Over SSH, WinRM or an RMM/MDM job: download and unzip the repo on the target
+machine, then run `node install.cjs`. Two things to get right:
 
-**Download the script, then run it** — don't pipe it from the network into a
-shell. Rule 4 forbids that, and the guard blocks the pattern, so a `curl ... |
-bash` rollout would be denied on any machine that already has the hooks.
+- **Run it as the developer who uses Claude Code.** A user install writes to
+  that account's own `~/.claude` (`%USERPROFILE%\.claude`), so an agent running
+  as root or SYSTEM installs into a profile Claude Code will never read.
+- **Download the archive, then run it** — don't pipe a script from the network
+  into a shell. Rule 4 forbids that, and the guard blocks the pattern, so a
+  `curl … | bash` rollout would be denied on any machine that already has the
+  hooks.
+
+`node install.cjs --dry-run` prints what would change without writing, which is
+worth running first on one machine.
 
 ## What you'll notice
 
